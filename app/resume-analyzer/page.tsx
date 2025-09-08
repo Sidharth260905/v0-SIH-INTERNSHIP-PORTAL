@@ -67,7 +67,15 @@ export default function ResumeAnalyzerPage() {
     }
   }
 
-  const getDerivedMetrics = (result: AnalysisResult) => {
+  const getDerivedMetrics = (result: AnalysisResult | null) => {
+    if (!result) {
+      return {
+        skillsMatch: 0,
+        atsCompatibility: 0,
+        grade: "N/A",
+      }
+    }
+
     const keywordCount = result.keywords?.length || 0
     const skillsMatch = Math.min(100, keywordCount * 8 + Math.random() * 20) // Estimate based on keywords
     const atsCompatibility = Math.max(60, (result.analysisScore || 0) - Math.random() * 15) // Slightly lower than overall score
@@ -270,7 +278,7 @@ export default function ResumeAnalyzerPage() {
                         </Badge>
                       ))}
                     </div>
-                    {(analysisResult.keywords || []).length === 0 && (
+                    {(!analysisResult.keywords || analysisResult.keywords.length === 0) && (
                       <p className="text-muted-foreground text-sm">
                         No specific keywords detected. Consider adding more relevant technical skills and industry
                         terms.

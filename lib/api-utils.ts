@@ -64,49 +64,39 @@ export function requireAuth(request: NextRequest): string {
 // AI/ML simulation helpers
 export async function simulateResumeAnalysis(resumeText: string) {
   try {
+    const maxResumeLength = 3000 // Limit resume text to ~3000 characters
+    const truncatedText =
+      resumeText.length > maxResumeLength ? resumeText.substring(0, maxResumeLength) + "..." : resumeText
+
     const { text } = await generateText({
-      model: groq("llama-3.1-70b-versatile"),
-      system: `You are an expert resume analyzer and career coach. Analyze the provided resume and return a detailed assessment in JSON format.
+      model: groq("llama-3.1-8b-instant"),
+      system: `You are a resume analyzer. You MUST respond with ONLY valid JSON. No explanations, no conversational text, ONLY JSON.`,
+      prompt: `Analyze this resume and return ONLY this JSON structure (no other text):
 
-Your analysis should include:
-1. Overall score (0-100)
-2. 3-5 specific strengths
-3. 3-5 areas for improvement
-4. 3-5 actionable suggestions
-5. Relevant keywords found in the resume
+{"score": [number 0-100], "strengths": ["strength1", "strength2"], "weaknesses": ["weakness1", "weakness2"], "suggestions": ["suggestion1", "suggestion2"], "keywords": ["keyword1", "keyword2"]}
 
-Be constructive, specific, and professional in your feedback. Focus on content quality, formatting, ATS compatibility, and industry relevance.`,
-      prompt: `Please analyze this resume and provide detailed feedback:
-
-${resumeText}
-
-Return your analysis in this exact JSON format:
-{
-  "score": 85,
-  "strengths": ["Specific strength 1", "Specific strength 2", "Specific strength 3"],
-  "weaknesses": ["Specific weakness 1", "Specific weakness 2"],
-  "suggestions": ["Actionable suggestion 1", "Actionable suggestion 2", "Actionable suggestion 3"],
-  "keywords": ["keyword1", "keyword2", "keyword3"]
-}`,
+Resume text:
+${truncatedText}`,
     })
+
+    // Clean the response - remove any non-JSON text
+    let cleanedText = text.trim()
+
+    // Find JSON object boundaries
+    const jsonStart = cleanedText.indexOf("{")
+    const jsonEnd = cleanedText.lastIndexOf("}")
+
+    if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+      cleanedText = cleanedText.substring(jsonStart, jsonEnd + 1)
+    }
 
     // Parse the AI response
     try {
-      const analysis = JSON.parse(text)
+      const analysis = JSON.parse(cleanedText)
 
-      // Validate the response structure
-      if (
-        !analysis.score ||
-        !analysis.strengths ||
-        !analysis.weaknesses ||
-        !analysis.suggestions ||
-        !analysis.keywords
-      ) {
-        throw new Error("Invalid AI response structure")
-      }
-
+      // Validate and sanitize the response structure
       return {
-        score: Math.min(100, Math.max(0, analysis.score)), // Ensure score is between 0-100
+        score: typeof analysis.score === "number" ? Math.min(100, Math.max(0, analysis.score)) : 75,
         strengths: Array.isArray(analysis.strengths) ? analysis.strengths.slice(0, 5) : [],
         weaknesses: Array.isArray(analysis.weaknesses) ? analysis.weaknesses.slice(0, 5) : [],
         suggestions: Array.isArray(analysis.suggestions) ? analysis.suggestions.slice(0, 5) : [],
@@ -114,6 +104,7 @@ Return your analysis in this exact JSON format:
       }
     } catch (parseError) {
       console.error("[v0] Failed to parse AI response:", parseError)
+      console.error("[v0] Raw AI response:", text)
       // Fallback to mock data if AI parsing fails
       return getFallbackAnalysis()
     }

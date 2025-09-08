@@ -244,9 +244,9 @@ export default function DashboardPage() {
                   {mockData.upcomingDeadlines.map((deadline, index) => (
                     <div key={index} className="p-3 bg-destructive/5 border border-destructive/20 rounded-lg">
                       <h4 className="font-medium text-sm text-foreground">{deadline.position}</h4>
-                      <p className="text-xs text-muted-foreground">{deadline.company}</p>
+                      <p className="text-xs text-foreground">{deadline.company}</p>
                       <div className="flex items-center justify-between mt-2">
-                        <span className="text-xs text-muted-foreground">{deadline.deadline}</span>
+                        <span className="text-xs text-foreground">{deadline.deadline}</span>
                         <Badge variant="destructive" className="text-xs">
                           {deadline.daysLeft} days left
                         </Badge>

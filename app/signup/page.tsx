@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -33,7 +32,7 @@ export default function SignupPage() {
     localStorage.setItem("signup-form-draft", JSON.stringify(data))
   }
 
-  useState(() => {
+  useEffect(() => {
     const saved = localStorage.getItem("signup-form-draft")
     if (saved) {
       try {
@@ -42,7 +41,7 @@ export default function SignupPage() {
         console.error("Failed to load saved form data")
       }
     }
-  })
+  }, [])
 
   const updateFormData = (field: string, value: string) => {
     const newData = { ...formData, [field]: value }
